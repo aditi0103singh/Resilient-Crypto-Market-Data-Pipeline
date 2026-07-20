@@ -1,27 +1,38 @@
 import os
-import requests
+import time
+import logging
 from dotenv import load_dotenv
+from src.extract import fetch_crypto_data
+from src.transform import clean_batch
 
-# Load the secret from .env file
 load_dotenv()
-api_key = os.getenv('CG_API_KEY')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-def fetch_crypto_price():
-    url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd"
+def run_pipeline(num_requests):
+    api_key = os.getenv('CG_API_KEY')
+    output_file = "data/cleaned/master_data.csv"
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
     
-    # Use the correct header for CoinGecko
-    headers = {
-        "x-cg-demo-api-key": api_key,
-        "accept": "application/json"
-    }
-    
-    try:
-        response = requests.get(url, headers=headers, timeout=10)
-        response.raise_for_status() # This triggers the error if the status is 4xx or 5xx
-        data = response.json()
-        print(f"Success! Data: {data}")
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching data: {e}")
+    # Check if file exists to decide whether to write the header
+    file_exists = os.path.isfile(output_file)
+
+    for i in range(num_requests):
+        logging.info(f"Processing request {i+1}/{num_requests}")
+        
+        data = fetch_crypto_data(api_key)
+        
+        if data:
+            df = clean_batch(data)
+            
+            if not df.empty:
+                # If file doesn't exist, write header. If it does, don't.
+                df.to_csv(output_file, mode='a', header=not file_exists, index=False)
+                
+                # After the first run, ensure file_exists is True so headers aren't added again
+                file_exists = True
+                logging.info(f"Request {i+1} saved with timestamp.")
+        
+        time.sleep(1.2)
 
 if __name__ == "__main__":
-    fetch_crypto_price()
+    run_pipeline(20) # Change this to 1000 whenever you are ready!
