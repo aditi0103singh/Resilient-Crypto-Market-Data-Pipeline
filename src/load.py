@@ -1,63 +1,41 @@
 import os
-import logging
-from dotenv import load_dotenv
+import pandas as pd
 from sqlalchemy import create_engine, text
-from src.utils import setup_logging
+from dotenv import load_dotenv
 
 load_dotenv()
-setup_logging()
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-def get_database_engine():
-    """Creates and returns a SQLAlchemy engine connected to Neon Postgres."""
-    db_url = os.getenv("DATABASE_URL")
-    if not db_url:
-        logging.error("DATABASE_URL is missing from environment variables!")
-        return None
-    try:
-        engine = create_engine(db_url)
-        return engine
-    except Exception as e:
-        logging.error(f"Failed to create database engine: {e}")
-        return None
-
-def test_connection():
-    """Tests the connection to the cloud database."""
-    engine = get_database_engine()
-    if not engine:
-        return False
-    
-    try:
-        with engine.connect() as connection:
-            result = connection.execute(text("SELECT version();"))
-            for row in result:
-                logging.info(f"Successfully connected to Neon PostgreSQL! Version: {row[0]}")
-        return True
-    except Exception as e:
-        logging.error(f"Connection test failed: {e}")
-        return False
-
-def load_dataframe_to_postgres(df, table_name="crypto_prices"):
-    """Loads a cleaned pandas DataFrame directly into PostgreSQL."""
+def load_crypto_data(df: pd.DataFrame, table_name: str = "crypto_prices"):
     if df.empty:
-        logging.warning("DataFrame is empty. Nothing to load.")
-        return
-
-    engine = get_database_engine()
-    if not engine:
+        print("DataFrame is empty. Nothing to load.")
         return
 
     try:
-        # Pandas to_sql handles table creation and appending automatically
-        df.to_sql(
-            name=table_name,
-            con=engine,
-            if_exists='append',  # Keeps historical time-series data
-            index=False
-        )
-        logging.info(f"Successfully loaded {len(df)} rows into Neon table '{table_name}'!")
+        engine = create_engine(DATABASE_URL)
+        
+        with engine.begin() as connection:
+            success_count = 0
+            for _, row in df.iterrows():
+                # Constructing an UPSERT query for PostgreSQL
+                # Assumes 'symbol' is your unique constraint/primary key column
+                query = text(f"""
+                    INSERT INTO {table_name} (symbol, price, timestamp)
+                    VALUES (:symbol, :price, :timestamp)
+                    ON CONFLICT (symbol) 
+                    DO UPDATE SET 
+                        price = EXCLUDED.price,
+                        timestamp = EXCLUDED.timestamp;
+                """)
+                
+                connection.execute(query, {
+                    "symbol": row.get("symbol"),
+                    "price": row.get("price"),
+                    "timestamp": row.get("timestamp")
+                })
+                success_count += 1
+                
+        print(f"Successfully upserted {success_count} rows into '{table_name}'.")
+        
     except Exception as e:
-        logging.error(f"Error loading data to PostgreSQL: {e}")
-
-if __name__ == "__main__":
-    # Test the connection when running load.py directly
-    test_connection()
+        print(f"Error loading data into database: {e}")
