@@ -4,22 +4,37 @@ from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
 
 load_dotenv()
-DATABASE_URL = os.getenv("DATABASE_URL")
+
+def get_database_engine():
+    database_url = os.getenv("DATABASE_URL")
+    if not database_url:
+        raise ValueError("DATABASE_URL environment variable is not set!")
+    return create_engine(database_url)
 
 def load_crypto_data(df: pd.DataFrame, table_name: str = "crypto_prices"):
-    if df.empty:
-        print("DataFrame is empty. Nothing to load.")
-        return
+    """
+    Takes a pandas DataFrame and loads it into the PostgreSQL database using an upsert.
+    Expected DataFrame columns: symbol, price, timestamp
+    """
+    engine = get_database_engine()
+    
+    print(f"Loading {len(df)} rows into database table '{table_name}'...")
+    
+    # Ensure columns match what the SQL expects
+    required_columns = ["symbol", "price", "timestamp"]
+    for col in required_columns:
+        if col not in df.columns:
+            raise ValueError(f"Missing required column in DataFrame: '{col}'. Found columns: {list(df.columns)}")
 
     try:
-        engine = create_engine(DATABASE_URL)
-        
         with engine.begin() as connection:
-            success_count = 0
             for _, row in df.iterrows():
-                # Constructing an UPSERT query for PostgreSQL
-                # Assumes 'symbol' is your unique constraint/primary key column
-                query = text(f"""
+                # Clean or map values safely
+                symbol_val = str(row["symbol"]).strip().upper()
+                price_val = float(row["price"]) if pd.notnull(row["price"]) else 0.0
+                timestamp_val = row["timestamp"]
+
+                sql_query = text(f"""
                     INSERT INTO {table_name} (symbol, price, timestamp)
                     VALUES (:symbol, :price, :timestamp)
                     ON CONFLICT (symbol) 
@@ -28,14 +43,16 @@ def load_crypto_data(df: pd.DataFrame, table_name: str = "crypto_prices"):
                         timestamp = EXCLUDED.timestamp;
                 """)
                 
-                connection.execute(query, {
-                    "symbol": row.get("symbol"),
-                    "price": row.get("price"),
-                    "timestamp": row.get("timestamp")
-                })
-                success_count += 1
-                
-        print(f"Successfully upserted {success_count} rows into '{table_name}'.")
+                connection.execute(
+                    sql_query, 
+                    {
+                        "symbol": symbol_val, 
+                        "price": price_val, 
+                        "timestamp": timestamp_val
+                    }
+                )
+        print("Data loaded successfully into the database!")
         
     except Exception as e:
         print(f"Error loading data into database: {e}")
+        raise e
