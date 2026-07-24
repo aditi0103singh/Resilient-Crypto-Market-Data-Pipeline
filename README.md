@@ -18,22 +18,25 @@ An automated data pipeline designed to ingest real-time cryptocurrency metrics f
 
 ## 📊 System Architecture
 
-```text
-[ CoinGecko API ] 
-        │
-        ▼ (HTTPS / Rate-Limited Retry Session w/ Backoff)
-┌────────────────────────────────────────────────────────┐
-│               GitHub Actions (Serverless)               │
-│  ┌──────────────────────────────────────────────────┐  │
-│  │ Python ETL Pipeline                              │  │
-│  │  ├── Robust HTTP Adapter (Transient Fault Handling)│  │
-│  │  ├── Defensive Payload Checks (Data Quality)     │  │
-│  │  └── Structured Logging & Monitoring             │  │
-│  └──────────────────────────────────────────────────┘  │
-└────────────────────────────────────────────────────────┘
-        │
-        ▼ (Secure Environment Variables via Secrets)
+<div align="center" style="font-family: monospace; text-align: center;">
+
+[ CoinGecko API ]<br>
+│<br>
+▼ (HTTPS / Rate-Limited Retry Session w/ Backoff)<br>
+┌────────────────────────────────────────────────────────┐<br>
+│ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; GitHub Actions (Serverless) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; │<br>
+│ &nbsp;┌──────────────────────────────────────────────────┐ &nbsp;│<br>
+│ &nbsp;│ Python ETL Pipeline &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; │ &nbsp;│<br>
+│ &nbsp;│ &nbsp;├── Robust HTTP Adapter (Transient Fault Handling)│ &nbsp;│<br>
+│ &nbsp;│ &nbsp;├── Defensive Payload Checks (Data Quality) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; │ &nbsp;│<br>
+│ &nbsp;│ &nbsp;└── Structured Logging & Monitoring &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; │ &nbsp;│<br>
+│ &nbsp;└──────────────────────────────────────────────────┘ &nbsp;│<br>
+└────────────────────────────────────────────────────────┘<br>
+│<br>
+▼ (Secure Environment Variables via Secrets)<br>
 [ Secure Database / Destination ]
+
+</div>
 
 ## 🛠️ Tech Stack & Engineering Highlights
 
