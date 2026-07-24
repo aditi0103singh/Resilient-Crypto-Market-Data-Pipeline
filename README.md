@@ -1,3 +1,4 @@
+Markdown
 <div align="center">
 
 # 🚀 Serverless Crypto ETL Pipeline
@@ -18,24 +19,26 @@ An automated data pipeline designed to ingest real-time cryptocurrency metrics f
 
 ## 📊 System Architecture
 
-<div align="center">
+<p align="center">
+  <img src="https://via.placeholder.com/1x1.png?text=+" width="0" height="0">
+</p>
 
 ```text
-[ CoinGecko API ] 
-       │
-       ▼ (HTTPS / Rate-Limited Retry Session w/ Backoff)
-┌────────────────────────────────────────────────────────┐
-│               GitHub Actions (Serverless)               │
-│  ┌──────────────────────────────────────────────────┐  │
-│  │ Python ETL Pipeline                              │  │
-│  │  ├── Robust HTTP Adapter (Transient Fault Handling)│  │
-│  │  ├── Defensive Payload Checks (Data Quality)     │  │
-│  │  └── Structured Logging & Monitoring             │  │
-│  └──────────────────────────────────────────────────┘  │
-└────────────────────────────────────────────────────────┘
-       │
-       ▼ (Secure Environment Variables via Secrets)
-[ Secure Database / Destination ]
+                                  [ CoinGecko API ] 
+                                          │
+                   ▼ (HTTPS / Rate-Limited Retry Session w/ Backoff)
+┌────────────────────────────────────────────────────────────────────────┐
+│                      GitHub Actions (Serverless)                       │
+│  ┌──────────────────────────────────────────────────────────────────┐  │
+│  │ Python ETL Pipeline                                              │  │
+│  │  ├── Robust HTTP Adapter (Transient Fault Handling)              │  │
+│  │  ├── Defensive Payload Checks (Data Quality)                     │  │
+│  │  └── Structured Logging & Monitoring                             │  │
+│  └──────────────────────────────────────────────────────────────────┘  │
+└────────────────────────────────────────────────────────────────────────┘
+                                          │
+                     ▼ (Secure Environment Variables via Secrets)
+                         [ Secure Database / Destination ]
 🛠️ Tech Stack & Engineering Highlights
 Language: Python
 
