@@ -6,6 +6,9 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from dotenv import load_dotenv
 
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 load_dotenv()
 
 # Create a persistent session
@@ -25,7 +28,23 @@ def fetch_crypto_data(api_key=None, coin_ids="bitcoin,ethereum,solana"):
     try:
         response = session.get(url, headers=headers, params=params, timeout=10)
         response.raise_for_status()
-        return response.json()
+        data = response.json()
+        
+        # --- DAY 6: DEFENSIVE PROGRAMMING CHECK ---
+        if not data:
+            logging.warning("Warning: Received an empty payload from the CoinGecko API.")
+            return None
+            
+        return data
+
     except Exception as e:
         logging.error(f"Extraction failed: {e}")
         return None
+
+if __name__ == "__main__":
+    logging.info("Starting crypto data extraction...")
+    crypto_data = fetch_crypto_data()
+    if crypto_data:
+        logging.info(f"Successfully fetched data: {crypto_data}")
+    else:
+        logging.warning("No data returned or extraction failed.")
